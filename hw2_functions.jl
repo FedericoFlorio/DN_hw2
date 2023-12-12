@@ -1,5 +1,4 @@
-using Revise, LinearAlgebra, BlockArrays, Statistics
-includet("hw1_functions.jl")
+using BlockArrays, LinearAlgebra, Statistics
 
 function barbell(n)
     W1 = Float64.(ones(n,n) - I)
@@ -14,53 +13,18 @@ function barbell(n)
     return  Graph(W)
 end
 
-exponential(r) = -log(rand())/r     # sampler for exponential distribution of rate r (inverse cumulative method)
-∂(A,i) = A.rowval[nzrange(A,i)]     # returns the out neighbours of node i
-
-function french_de_groot(P, x0, T; stats = (t,x)->println("$t $x"), ϵ=1e-6)
-    stop(x,X,eps) = (norm(x-X)/norm(X) ≤ eps)
+function french_de_groot_lazy(P, x0, T; ϵ=1e-3, target=[])
     N = length(x0)
 
-    function simulation(P, x0, T, stats, ϵ)
-        x = x0
-        t = 0
+    x = x0
+    t = 0
+    P_evolution = (P+I)./2
+    targetnorm = norm(target)
 
-        while true
-            x0 = x
-            x = P*x0
-            t += 1
-            stats(t,x)
-            (stop(x,x0,ϵ) || t≥T) && break
-        end
-        return t
+    while true
+        x = P_evolution*x
+        t += 1
+        (norm(x-target)/targetnorm ≤ ϵ || t≥T) && break
     end
-    return simulation(P, x0, T, stats, ϵ)
+    return t
 end
-
-################################################################################################
-
-nstart = 6
-nstop = 10
-niter = 100
-T = 1e3
-
-nn = [2^i for i in nstart:nstop]
-tt = Vector{Int}(undef,length(nn))
-
-function do_nothing(t,x)
-    return nothing
-end
-
-for n in nn
-    G = barbell(n)
-    times_abs = Vector{Int}(undef,niter)
-    x_in = [(mod(i,2)==0 ? 0 : 1) for i in 1:2*n]
-
-    for iter in 1:niter
-        times_abs[iter] = french_de_groot(G.P, x_in, T, stats=do_nothing)
-    end
-    tt[searchsortedfirst(nn,n)] = mean(times_abs)
-end
-
-println(nn)
-println(tt)
