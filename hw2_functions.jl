@@ -1,6 +1,6 @@
 using BlockArrays, LinearAlgebra, Statistics
 
-function barbell(n)
+function barbell(n)         # Creates a barbell graph of size 2n (n nodes for each fully connected component)
     W1 = Float64.(ones(n,n) - I)
     W = BlockArray{Float64}(undef_blocks, [n,n], [n,n])
     setblock!(W,W1,1,1)
@@ -13,7 +13,7 @@ function barbell(n)
     return  Graph(W)
 end
 
-function french_de_groot_lazy(P, x0, T; ϵ=1e-3, target=[])
+function french_de_groot_lazy(P, x0, T; ϵ=1e-3, target=[])      # Simulates the lazy French - de Groot dynamics until convergence (or at most for T temporal steps). The target vector is used to check convergence
     N = length(x0)
 
     x = x0
